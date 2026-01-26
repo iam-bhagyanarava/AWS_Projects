@@ -1,0 +1,40 @@
+resource "aws_security_group" "webSg" {
+  name   = "web"
+  vpc_id = aws_vpc.myvpc.id
+
+  tags = {
+    Name = "Web-sg"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "http" {
+  security_group_id = aws_security_group.webSg.id
+
+  ip_protocol = "tcp"
+  from_port   = 80
+  to_port     = 80
+  cidr_ipv4   = "0.0.0.0/0"
+
+  description = "HTTP from internet"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ssh" {
+  security_group_id = aws_security_group.webSg.id
+
+  ip_protocol = "tcp"
+  from_port   = 22
+  to_port     = 22
+  cidr_ipv4   = "0.0.0.0/0"
+
+  description = "SSH"
+}
+
+resource "aws_vpc_security_group_egress_rule" "all" {
+  security_group_id = aws_security_group.webSg.id
+
+  ip_protocol = "-1"
+  cidr_ipv4   = "0.0.0.0/0"
+
+  description = "Allow all outbound"
+}
+
