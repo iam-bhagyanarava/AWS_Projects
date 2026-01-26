@@ -3,25 +3,28 @@ To avoid these problems, use the current best practice of the aws_vpc_security_g
 
 # Old way (inline ingress / egress)
 resource "aws_security_group" "webSg" {
+
   ingress { ... }
+	
   ingress { ... }
 }
 ## Terraform sees this as:
 “This security group has a list of rules”
-has no stable IDs
-is order-sensitive
-is managed as a whole
-So Terraform cannot tell: which rule is “HTTP” which rule is “SSH” which CIDR inside a rule changed
+has no stable IDs,
+is order-sensitive,
+is managed as a whole,
+### So Terraform cannot tell: which rule is “HTTP” which rule is “SSH” which CIDR inside a rule changed
 
 # New way (rule resources)
 resource "aws_vpc_security_group_ingress_rule" "http" { ... }
+
 resource "aws_vpc_security_group_ingress_rule" "ssh"  { ... }
 
 ## Terraform now sees:
 “This security group has distinct child resources, each with its own ID”
 
 ### Each rule becomes:
-independently tracked
-independently created / destroyed
-independently diffed
+independently tracked,
+independently created / destroyed,
+independently diffed,
 That’s the key upgrade.
