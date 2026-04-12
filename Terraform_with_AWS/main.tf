@@ -3,7 +3,7 @@ resource "aws_vpc" "myvpc" {
   cidr_block = "10.0.0.0/16"
 }
 
-#creating 2 subnets
+#creating 2 public subnets with 2 availability zones.
 resource "aws_subnet" "sub1" {
   vpc_id                  = aws_vpc.myvpc.id
   cidr_block              = "10.0.0.0/24"
@@ -17,12 +17,14 @@ resource "aws_subnet" "sub2" {
   map_public_ip_on_launch = "true"
 }
 
-#creating the internet-gateway
+#creating the internet-gateway to VPC to internet, without this no internet access (entrance ticket)
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.myvpc.id
 }
 
-#creatring the route_table and associating with the subnets
+#creating the route_table and associating with the subnets
+# Route table defines the path how the traffic should flow
+
 resource "aws_route_table" "myrt" {
   vpc_id = aws_vpc.myvpc.id
 
@@ -45,12 +47,13 @@ resource "aws_s3_bucket" "example" {
   bucket = "myfirst-terraform-code-with-aws19"
 }
 
-#Creating the security group for the instances and allaowing the inbound and outbound traffic
+#Creating the security group for the instances and allaowing the inbound and outbound traffic.
 resource "aws_security_group" "mysg" {
   name   = "web"
   vpc_id = aws_vpc.myvpc.id
 }
 
+#Allowing the port  only 80 and 22 from internet to reach VPC subnets.
 resource "aws_vpc_security_group_ingress_rule" "http" {
   security_group_id = aws_security_group.mysg.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -69,6 +72,7 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
   description       = "Allow SSH traffic"
 }
 
+#Allowing all traffic from VPC to Internet
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.mysg.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -103,6 +107,9 @@ resource "aws_lb" "my-alb" {
     name = "web"
   }
 }
+#The target group contains EC2 instances and performs health checks to ensure only healthy instances receive traffic. 
+#The load balancer distributes traffic across multiple EC2 instances deployed in different subnets for high availability.”
+
 resource "aws_lb_target_group" "lbtg" {
   name     = "lbtg"
   port     = 80
@@ -113,7 +120,7 @@ resource "aws_lb_target_group" "lbtg" {
     port = "traffic-port"
   }
 }
-resource "aws_lb_target_group_attachment" "tg-attach1" {
+resource "  aws_lb_target_group_attachment" "tg-attach1" {
   target_group_arn = aws_lb_target_group.lbtg.arn
   target_id        = aws_instance.webserver1.id
   port             = 80
@@ -123,6 +130,7 @@ resource "aws_lb_target_group_attachment" "tg-attach2" {
   target_id        = aws_instance.webserver2.id
   port             = 80
 }
+#The listener listens on port 80 and forwards requests to the target group. 
 resource "aws_lb_listener" "listener" {
   load_balancer_arn = aws_lb.my-alb.arn
   port              = "80"
